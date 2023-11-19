@@ -2,6 +2,9 @@
 This project is the implementation of a Linux Queuing Discipline for network delay implementation. This QDISC focuses on the ability to flexible delay packets following stochastic delay distributions that can be altered and fine-tuned to specific use cases.
 The calculation of delays is outsourced to an application in User Space that pre-calculates delays and transfers them to the QDISC via a Character Device.
 
+![Design](design.png)
+
+
 ## Getting Started
 This project is divided into four parts:
 1.  The Kernel Module that contains the QDISC:

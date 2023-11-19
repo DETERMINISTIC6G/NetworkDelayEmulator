@@ -12,7 +12,7 @@ In order to compile the Kernel Module, you need the latest Kernel Headers for yo
 ```
 2. Switch into the delay_sch directory
 ```
-    cd sch_dekay
+    cd sch_delay
 ```
 3. Compile the Kernel Module
 ```

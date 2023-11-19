@@ -1,0 +1,1 @@
+/usr/bin/rsync -auP grohmalz@ipvs03:~/*.csv ./data/.

@@ -11,7 +11,7 @@ MAX_QUEUE_SIZE = 512000
 MAX_DATA_SIZE = 40960
 
 DISTRIBUTIONS = [
-    ["Normal Distributed Delay", normal_distribution.NormalDistribution],
+    ["Normal Distribution", normal_distribution.NormalDistribution],
     ["Static Delay", static.StaticDistribution]
 ]
 

@@ -6,8 +6,8 @@ class NormalDistribution:
         self.mu = 0
 
     def init(self):
-        self.mu = int(input("Please specify the desired mean: "))
-        self.sigma = int(input("Please specify the standard deviation : "))
+        self.mu = int(input("Mean [nanoseconds]: "))
+        self.sigma = int(input("Standard deviation [nanoseconds]: "))
 
 
     def generate_delays(self, count):
@@ -15,7 +15,7 @@ class NormalDistribution:
         return data
 
     def print_info(self):
-        return "Normal Distributed µ: %dns, σ: %dns" % (self.mu, self.sigma)
+        return "Normal Distribution µ: %dns, σ: %dns" % (self.mu, self.sigma)
 
     def help(self):
         # TODO

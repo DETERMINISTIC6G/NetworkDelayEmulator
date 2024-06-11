@@ -2,7 +2,7 @@ NetworkDelayEmulator implements a Linux Queuing Discipline (QDisc) for network d
 
 # Acknowledgments
 
-NetworkDelayEmulator was originally developed by Lorenz Grohmann in his (Bachelor's thesis)[https://elib.uni-stuttgart.de/handle/11682/14240] at University of Stuttgart in the context of the DETERMINISTIC6G project, which has received funding from the European Union's Horizon Europe research and innovation programme under grant agreement No. 101096504.
+NetworkDelayEmulator was originally developed by Lorenz Grohmann in his [Bachelor's thesis](https://elib.uni-stuttgart.de/handle/11682/14240) at University of Stuttgart in the context of the DETERMINISTIC6G project, which has received funding from the European Union's Horizon Europe research and innovation programme under grant agreement No. 101096504.
 
 [DETERMINISTIC6G Project Website](https://deterministic6g.eu/).
 
@@ -18,13 +18,13 @@ The core of the emulator is a QDisc called sch_delay that can be assigned to net
 
 The following figure shows the system architecture consisting of two major parts: the QDisc running in the kernel space, and a user-space application providing individual delays for each transmitted packet through a character device. The provided delays are buffered in the QDisc, such that delay values are available immediatelly when new packets arrive. Whenever a packet is to be transmitted through the network interface, the next delay value is dequeued and applied to the packet before passing it on to the network interface (TX queue).
 
-Providing delays through a user-space application allows for a flexible and convenient definition of delays without touching any kernel code. The project contains a sample user-space application to define delays as constant values or as a probability density functions (normal distribution), which can be easily extended to calculate other delay distribution.
+Providing delays through a user-space application allows for a flexible and convenient definition of delays without touching any kernel code. The project contains a sample user-space application implemented in Python to define delays as constant values or as normal distributions (probability density function), which can be easily extended to calculate other delay distribution.
 
 ![Design](design.png)
 
-The QDisc can also be applied to network interfaces that are assigned to a virtual bridge as described below to apply individual delay distributions to packets forwarded through different egress interfaces. 
+The QDisc can also be applied to network interfaces that are assigned to a virtual bridge as described below to apply individual delay distributions to packets forwarded through different egress interfaces. This allows for emulating end-to-end network delay with a single Linux machine.
 
-One limitation of this approach based on pre-calculating and buffering delays is that it is restricted to independent and identically distributed (i.i.d.) delays. If the delay of a specific packet depends on the delay of an earlier packet, this cannot be easily modelled by this approach since delays were already calculated and buffered possibly long before the packet to be delayed actually arrives.  
+One limitation of this approach based on pre-calculating and buffering delays is that it is restricted to independent and identically distributed (i.i.d.) delays. If the delay of a specific packet depends on the delay of an earlier packet, this cannot be easily modelled by this approach since delays were already calculated and buffered possibly long before the packet to be delayed actually arrives. Also changing the delay distribution at runtime is not easily possible due to the buffering of delays from the old distribution. 
 
 The project is structured as follows:
 
@@ -38,19 +38,19 @@ The project is structured as follows:
 
 Install basic tools to build the kernel module and use the user-space app:
 
-```
+```console
 $ sudo apt install bison flex build-essential python3 python3-numpy git
 ```
 
 To compile the kernel module, the kernel header files matching the running kernel are required:
 
-```
+```console
 $ sudo apt install linux-headers-$(uname -r)
 ```
 
 Clone the repository (we assume that you cloned to your home directory and refer to this location as `~/networkdelayemulator` in the following):
 
-```
+```console
 $ git clone https://deterministic6g.informatik.uni-stuttgart.de/d6g/networkdelayemulator.git
 ```
 
@@ -58,20 +58,20 @@ $ git clone https://deterministic6g.informatik.uni-stuttgart.de/d6g/networkdelay
 
 To build the kernel module:
 
-```
+```console
 $ cd ~/networkdelayemulator/sch_delay
 $ make clean & make
 ```
 
 To load the kernel module:
 
-```
+```console
 $ sudo insmod ~/networkdelayemulator/sch_delay/build/sch_delay.ko
 ```
 
 Check, whether the module has been loaded:
 
-```
+```console
 $ lsmod | grep sch_delay
 sch_delay              16384  0
 ```
@@ -82,21 +82,21 @@ QDiscs are commonly loaded with the tc tool in Linux. The standard tc tool comin
 
 Download iproute2, which contains tc. We use iproute2 version v6.5.0, but you can also try other versions (see [iproute2](https://github.com/iproute2/iproute2/tags)):
 
-```
+```console
 $ cd ~/networkdelayemulator/tc
 $ git clone --branch v6.5.0 https://github.com/iproute2/iproute2.git
 ```
 
 Patch the sources of tc:
 
-```
+```console
 $ cp q_delay.c iproute2/tc
 $ patch -R ./iproute2/tc/Makefile Makefile.patch
 ```
 
 Build tc:
 
-```
+```console
 $ cd iproute2
 $ make
 ```
@@ -107,7 +107,7 @@ If everything worked well, you should see the tc executable in the directory `ip
 
 If you have completed the steps above, you can assign a QDisc to a network interface, say eth0, as follows, using the modified tc tool:
 
-```
+```console
 $ cd ~/networkdelayemulator/tc
 $ sudo ./iproute2/tc/tc  qdisc add dev eth0 root delay reorder True limit 1000
 $ sudo ./iproute2/tc/tc  qdisc add dev eth1 root delay reorder True limit 1000
@@ -124,7 +124,7 @@ When you have assigned the QDisc, a new character device will appear in the dire
 
 Start the given user-space application as follows:
 
-```
+```console
 $ cd ~/networkdelayemulator/userspace_delay
 $ sudo python3 userspace_delay.py /dev/sch_delay/eth0
 $ sudo python3 userspace_delay.py /dev/sch_delay/eth1
@@ -175,7 +175,7 @@ $ sudo ip link set eth1 up
 
 Next, we add the delay QDiscs to eth0 and eth1 on Hemu (be sure to load the kernel module first as explained above and use the modified tc tool that you built):
 
-```
+```console
 $ cd ~/networkdelayemulator/tc
 $ sudo ./iproute2/tc/tc  qdisc add dev eth0 root delay reorder True limit 1000
 $ sudo ./iproute2/tc/tc  qdisc add dev eth1 root delay reorder True limit 1000
@@ -183,10 +183,8 @@ $ sudo ./iproute2/tc/tc  qdisc add dev eth1 root delay reorder True limit 1000
 
 Finally, we start two instances of the user-space application, one providing delays for messages leaving through port eth0 (character device `/dev/sch_delay/eth0`) to emulate the delay from H2 towards H1, and one for port eth1 (character device `/dev/sch_delay/eth1`) to emulate the delay from H1 to H2.
 
-```
+```console
 $ cd ~/networkdelayemulator/userspace_delay
 $ sudo python3 userspace_delay.py /dev/sch_delay/eth0
 $ sudo python3 userspace_delay.py /dev/sch_delay/eth1
 ```
-
-

@@ -198,7 +198,7 @@ $ sudo python3 userspace_delay.py /dev/sch_delay/eth1
 
 # Evaluation
 
-To give an impression on the accuracy to be expected with the NetworkDelayEmulator, we performed measurements with the following virtual bridge setup. We used network taps in fiber optic cables (marked with `x`) and an FPGA network measurement card from Napatech () to capture the traffic from H1 (sender) to H2 (receiver) with nano-second precision.
+To give an impression on the accuracy to be expected with the NetworkDelayEmulator, we performed measurements with the following virtual bridge setup. We used network taps in fiber optic cables (marked with `x`) and an FPGA network measurement card from Napatech (NT40E3-4-PTP) to capture the traffic from H1 (sender) to H2 (receiver) with nano-second precision.
 
 The sender app on H1 sends minimum-size UDP packets at a rate of 100 pkt/s to the receiver app on H2. 
 
@@ -213,6 +213,7 @@ The specs of the Hemu host are:
 * Intel(R) Xeon(R) CPU E5-1650 v3 @ 3.50GHz
 * 16 GB RAM
 
+The pcap traces and Jupyter script of this evaluation can be found in directory ` ~/networkdelayemulator/miscellaneous/measurements`.
 ```
        pcap (sender)
          ^
@@ -244,7 +245,7 @@ For the normal distribution, the following values were measured:
 * min = 0.005947589874267578 s
 * max = 0.014116764068603516 s
 
-Without delay emulation, the end-to-end delay was:
+Without delay emulation, the delay was:
 
 * mean = 8.166161013459658e-05 s
 * 99 % confidence interval of the mean = [8.159266669171887e-05 s, 8.173055357747428e-05 s]

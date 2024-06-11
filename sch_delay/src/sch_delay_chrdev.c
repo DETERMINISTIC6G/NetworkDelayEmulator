@@ -1,5 +1,5 @@
 /**
- * This file contains all functions that handle the communication with User Space through character devices.
+ * Copyright 2024 The NetworkDelayEmulator authors as listed in file AUTHORS.
  *
  * Copyright 2024 Lorenz Grohmann (st161568@stud.uni-stuttgart.de)
  *

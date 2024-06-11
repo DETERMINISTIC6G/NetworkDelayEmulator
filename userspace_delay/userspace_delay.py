@@ -1,4 +1,4 @@
-# Copyright 2024 Lorenz Grohmann (st161568@stud.uni-stuttgart.de)
+# Copyright 2024 The NetworkDelayEmulator authors as listed in file AUTHORS. 
 #
 # This file is part of NetworkDelayEmulator.
 #

@@ -10,7 +10,7 @@ DETERMINISTIC6G e-mail: coordinator@deterministic6g.eu
 
 # License
 
-GPL (TODO: Add license to project and each source code file.)
+NetworkDelayEmulator is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
 # Overview
 

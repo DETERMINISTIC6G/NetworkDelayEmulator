@@ -1,8 +1,24 @@
-/*
+/**
+ * This file contains all functions that handle the communication with User Space through character devices.
+ *
+ * Copyright 2024 Lorenz Grohmann (st161568@stud.uni-stuttgart.de)
+ *
+ * This file is part of NetworkDelayEmulator.
+ *
+ * NetworkDelayEmulator is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * NetworkDelayEmulator is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with NetworkDelayEmulator. If not, see <http://www.gnu.org/licenses/>.
+ */
 
-    This File contains all functions that handle the communication with User Space through character devices.
-
-*/
 #include "sch_delay_chrdev.h"
 #include "sch_delay.h"
 

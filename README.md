@@ -200,7 +200,7 @@ $ sudo python3 userspace_delay.py /dev/sch_delay/eth1
 
 To give an impression on the accuracy to be expected with the NetworkDelayEmulator, we performed measurements with the following virtual bridge setup. We used network taps in fiber optic cables (marked with `x`) and an FPGA network measurement card from Napatech (NT40E3-4-PTP) to capture the traffic from H1 (sender) to H2 (receiver) with nano-second precision.
 
-The sender app on H1 sends minimum-size UDP packets at a rate of 100 pkt/s to the receiver app on H2. 
+The sender app on H1 sends minimum-size (64B) UDP packets at a rate of 100 pkt/s and at a speed of 10 Gbps to the receiver app on H2. 
 
 The QDisc is configure with a normal distribution with mean = 10 ms and stddev = 1 ms.
 
@@ -213,7 +213,8 @@ The specs of the Hemu host are:
 * Intel(R) Xeon(R) CPU E5-1650 v3 @ 3.50GHz
 * 16 GB RAM
 
-The pcap traces and Jupyter script of this evaluation can be found in directory ` ~/networkdelayemulator/miscellaneous/measurements`.
+The pcap traces and Jupyter script of this evaluation can be found in directory `~/networkdelayemulator/miscellaneous/measurements`.
+
 ```
        pcap (sender)
          ^
@@ -231,7 +232,12 @@ The pcap traces and Jupyter script of this evaluation can be found in directory 
                                                        pcap (receiver)
 ```
 
-The following figures show the histograms of the actual delay between the measurement points.
+The following figures show the histograms of the actual delay between the measurement points. Theoretically, we would need to subtract:
+
+* One transmission delay (64*8 bit / 10 Gbps = 51.2 ns) since Hemu will only start processing the packet when it has been fully received, and the measurement card takes the timestamp at the header.
+* The propagation delay for about 6 m fiber cable (about 6 m / (2/3*3e8 m/s) = 30 ns) connecting the tap to the measurement card.
+
+However, since this delay is only in the range of microseconds or below, we report values as measured. 
 
 ![measurements-normal_distribution](e2e_delay_normal_distribution.png)
 

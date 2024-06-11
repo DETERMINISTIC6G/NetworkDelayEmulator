@@ -114,11 +114,18 @@ $ cd ~/networkdelayemulator/tc
 $ sudo ./iproute2/tc/tc qdisc add dev eth0 root delay reorder True limit 1000
 ```
 
+You can later remove the QDisc as follows:
+
+```console
+$ cd ~/networkdelayemulator/tc
+$ sudo ./iproute2/tc/tc qdisc del dev eth0 root
+```
+
 The parameters of the QDisc are:
 
 | Option | Type | Default | Explanation |
 |--------|------|---------| ----------- |
-| limit  | int  | 1000    | The size of the internal queue for buffering delay values |
+| limit  | int  | 1000    | The size of the internal queue for buffering delayed packets. If this queue overflows, packets will get dropped. For instance, if packets are delayed by a constant value of 10 ms and arrive at a rate of 1000 pkt/s, then a queue of at least 1000 pkt/s * 10e-3 s = 10 pkts would be required. A warning will be posted to the kernel log if messages are dropped. |
 | reorder| bool | true    | Whether packet reording is allowed to closely follow the given delay values, or keep packet order as received. If packet reordering is allowed, a packet with a smaller random delay might overtake an earlier packet with a larger random delay in the QDisc. If packet re-ordering is not allowed, additional delay might be added to the given delay values to avoid packet re-ordering. |
 
 When you have assigned the QDisc, a new character device will appear in the directory `/dev/sch_delay`. Through this decvice, the QDisc receives the delays for the packets from a user-space application. A sample user-space application implemenented in Python is included in directory `userspace_delay`. This application supports constant delays and normally distributed delays. You can also take this application as an example to implement your own application providing delays to the QDisc. 
@@ -188,3 +195,60 @@ $ cd ~/networkdelayemulator/userspace_delay
 $ sudo python3 userspace_delay.py /dev/sch_delay/eth0
 $ sudo python3 userspace_delay.py /dev/sch_delay/eth1
 ```
+
+# Evaluation
+
+To give an impression on the accuracy to be expected with the NetworkDelayEmulator, we performed measurements with the following virtual bridge setup. We used network taps in fiber optic cables (marked with `x`) and an FPGA network measurement card from Napatech () to capture the traffic from H1 (sender) to H2 (receiver) with nano-second precision.
+
+The sender app on H1 sends minimum-size UDP packets at a rate of 100 pkt/s to the receiver app on H2. 
+
+The QDisc is configure with a normal distribution with mean = 10 ms and stddev = 1 ms.
+
+As baseline, we also capture a trace with zero delay emulation (w/o QDisc on eth1). 
+
+Traces were captured for about 10 min.
+
+The specs of the Hemu host are:
+
+* Intel(R) Xeon(R) CPU E5-1650 v3 @ 3.50GHz
+* 16 GB RAM
+
+```
+       pcap (sender)
+         ^
+         |
+ ----    |      -------------------------------------          ----
+|    |   |    |              ---------              |        |    |
+|    |---x--->|------------>|         |<------------|<-------|    |
+| H1 |        | eth0        | vBridge |        eth1 |        | H2 |
+|    |<-------|<------------|         |------QDisc->|---x--->|    |
+|    |        |              ---------              |   |    |    |
+|    |        |                Hemu                 |   |    |    |
+ ----          -------------------------------------    |     ----
+                                                        |
+                                                        v
+                                                       pcap (receiver)
+```
+
+The following figures show the histograms of the actual delay between the measurement points.
+
+![measurements-normal_distribution](e2e_delay_normal_distribution.png)
+
+![measurements-null_emulation](e2e_delay_null_delay.png)
+
+For the normal distribution, the following values were measured:
+
+* mean = 0.010126313739089609 s
+* stddev = 0.0009962691742813061 s
+* 99 % confidence interval of the mean = [0.010115940597227065 s, 0.010136686880952152 s]
+* min = 0.005947589874267578 s
+* max = 0.014116764068603516 s
+
+Without delay emulation, the end-to-end delay was:
+
+* mean = 8.166161013459658e-05 s
+* 99 % confidence interval of the mean = [8.159266669171887e-05 s, 8.173055357747428e-05 s]
+* min = 1.0251998901367188e-05 s
+* max = 9.942054748535156e-05 s
+
+We see that the delay added without any emulated delay is around 81 us. This could be considered as an offset when creating delay distributions.

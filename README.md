@@ -36,7 +36,9 @@ The project is structured as follows:
 
 ## Prerequisites
 
-Install basic tools to build the kernel module and use the user-space app:
+The following instructions apply to Debian 12.5.0 with kernel 6.1.0-21-amd64. However, other Linux distributions should work too.
+
+Install basic tools to build the kernel module and to execute the user-space app:
 
 ```console
 $ sudo apt install bison flex build-essential python3 python3-numpy git
@@ -109,16 +111,15 @@ If you have completed the steps above, you can assign a QDisc to a network inter
 
 ```console
 $ cd ~/networkdelayemulator/tc
-$ sudo ./iproute2/tc/tc  qdisc add dev eth0 root delay reorder True limit 1000
-$ sudo ./iproute2/tc/tc  qdisc add dev eth1 root delay reorder True limit 1000
+$ sudo ./iproute2/tc/tc qdisc add dev eth0 root delay reorder True limit 1000
 ```
 
 The parameters of the QDisc are:
 
-| Option | Type | Default | Explanation                    |
-|--------|------|---------| ------------------------------ |
-| limit  | int  | 1000    | The size of the internal queue |
-| reorder| bool | true    | Whether packet reording is allowed to closely follow the given delay distributions, or keep packet order as received. If packet reordering is allowed, a packet with a smaller random delay might overtake an earlier packet with a larger random delay in the QDisc. |
+| Option | Type | Default | Explanation |
+|--------|------|---------| ----------- |
+| limit  | int  | 1000    | The size of the internal queue for buffering delay values |
+| reorder| bool | true    | Whether packet reording is allowed to closely follow the given delay values, or keep packet order as received. If packet reordering is allowed, a packet with a smaller random delay might overtake an earlier packet with a larger random delay in the QDisc. If packet re-ordering is not allowed, additional delay might be added to the given delay values to avoid packet re-ordering. |
 
 When you have assigned the QDisc, a new character device will appear in the directory `/dev/sch_delay`. Through this decvice, the QDisc receives the delays for the packets from a user-space application. A sample user-space application implemenented in Python is included in directory `userspace_delay`. This application supports constant delays and normally distributed delays. You can also take this application as an example to implement your own application providing delays to the QDisc. 
 
@@ -127,7 +128,6 @@ Start the given user-space application as follows:
 ```console
 $ cd ~/networkdelayemulator/userspace_delay
 $ sudo python3 userspace_delay.py /dev/sch_delay/eth0
-$ sudo python3 userspace_delay.py /dev/sch_delay/eth1
 ```
 Optional parameters to the user-space application are:
 
@@ -153,18 +153,18 @@ The following figure shows a sample topology with two hosts H1, H2. The end-to-e
 
 ```
  ----      -------------------------------------      ----
-|    |                   ---------              |    |    |
+|    |    |              ---------              |    |    |
 |    |--->|------------>|         |<------------|<---|    |
 | H1 |    | eth0        | vBridge |        eth1 |    | H2 |
 |    |<---|<-QDisc------|         |------QDisc->|--->|    |
 |    |    |              ---------              |    |    |
- ----     |                Hemu                 |     ----
-	   ------------------------------------- 
+|    |    |                Hemu                 |    |    |
+ ----      -------------------------------------      ----
 ```
 
-To implement this scenario, we first create a virtual bridge on HEmu and assign the two physical network interfaces eth0 and eth1 to the virtual bridge. We also bringe the interfaces up in case they were previously down:
+To implement this scenario, we first create a virtual bridge on HEmu and assign the two physical network interfaces eth0 and eth1 to the virtual bridge. We also bring the interfaces up in case they were previously down:
 
-```
+```console
 $ sudo ip link add name vbridge type bridge
 $ sudo ip link set dev vbridge up
 $ sudo ip link set eth0 master vbridge

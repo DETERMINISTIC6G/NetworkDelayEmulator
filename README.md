@@ -8,6 +8,8 @@ NetworkDelayEmulator was originally developed by Lorenz Grohmann in his [Bachelo
 
 DETERMINISTIC6G e-mail: coordinator@deterministic6g.eu
 
+A list of all contributors can be found in AUTHORS file. 
+
 # License
 
 NetworkDelayEmulator is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -219,7 +221,7 @@ The pcap traces and Jupyter script of this evaluation can be found in directory 
        pcap (sender)
          ^
          |
- ----    |      -------------------------------------          ----
+ ----    |     -------------------------------------          ----
 |    |   |    |              ---------              |        |    |
 |    |---x--->|------------>|         |<------------|<-------|    |
 | H1 |        | eth0        | vBridge |        eth1 |        | H2 |

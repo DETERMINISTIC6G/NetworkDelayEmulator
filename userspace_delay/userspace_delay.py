@@ -5,14 +5,15 @@ import argparse
 from io import BytesIO
 from delay_distributions import *
 
-from distributions import normal_distribution, static
+from distributions import normal_distribution, static, user_defined_distribution
 
 MAX_QUEUE_SIZE = 512000
 MAX_DATA_SIZE = 40960
 
 DISTRIBUTIONS = [
     ["Normal Distribution", normal_distribution.NormalDistribution],
-    ["Static Delay", static.StaticDistribution]
+    ["Static Delay", static.StaticDistribution],
+    ["Histogram", user_defined_distribution.UserDefinedDistribution]
 ]
 
 parser = argparse.ArgumentParser()

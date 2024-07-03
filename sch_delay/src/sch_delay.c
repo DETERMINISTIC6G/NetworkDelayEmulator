@@ -325,23 +325,20 @@ static int delay_init(struct Qdisc *sch, struct nlattr *opt, struct netlink_ext_
     struct delay_qdisc_data *qdisc_data = qdisc_priv(sch);
     struct net_device *dev = qdisc_dev(sch);
 
-    
-    //qdisc_data->net_dev_name = dev->name;
-
-//    struct chr_dev_data *chrdev_data = qdisc_data->dev_data;
-    int prefix_length = strlen(DEVICE_PREFIX);
-
-    strlcpy(qdisc_data->net_dev_name, dev->name, 50);
-
+    strlcpy(qdisc_data->net_dev_name, dev->name, MAX_DEVNAME_LEN);
 
     status = kfifo_alloc(&qdisc_data->delay_queue, DELAY_FIFO_SIZE, GFP_KERNEL);
 
     qdisc_watchdog_init(&qdisc_data->watchdog, sch);
     qdisc_data->chr_dev_open_count = 0;
 
-    strlcpy(qdisc_data->chr_dev_name, DEVICE_PREFIX, 50);
-    strlcpy(qdisc_data->chr_dev_name+prefix_length, dev->name, 50-prefix_length);
-
+    strlcpy(qdisc_data->chr_dev_name, DEVICE_PREFIX, MAX_DEVNAME_LEN);
+    size_t offs = strlen(qdisc_data->chr_dev_name);
+    strlcpy(qdisc_data->chr_dev_name+offs, dev->name, MAX_DEVNAME_LEN-offs);
+    
+    offs = strlen(qdisc_data->chr_dev_name);
+    snprintf(qdisc_data->chr_dev_name+offs, MAX_DEVNAME_LEN-offs, "-%u", sch->handle);
+    
     // Register Device
     if((alloc_chrdev_region(&qdisc_data->chr_dev_majour_num, 0, 1, qdisc_data->chr_dev_name)) < 0) {
         printk(KERN_ALERT "sch_delay %s: failed to allocate majour number\n", qdisc_data->net_dev_name);

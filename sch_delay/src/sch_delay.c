@@ -335,9 +335,11 @@ static int delay_init(struct Qdisc *sch, struct nlattr *opt, struct netlink_ext_
     strlcpy(qdisc_data->chr_dev_name, DEVICE_PREFIX, MAX_DEVNAME_LEN);
     size_t offs = strlen(qdisc_data->chr_dev_name);
     strlcpy(qdisc_data->chr_dev_name+offs, dev->name, MAX_DEVNAME_LEN-offs);
-    
+
+    unsigned int h_min = TC_H_MIN(sch->handle);
+    unsigned int h_maj = TC_H_MAJ(sch->handle) >> 16; 
     offs = strlen(qdisc_data->chr_dev_name);
-    snprintf(qdisc_data->chr_dev_name+offs, MAX_DEVNAME_LEN-offs, "-%u", sch->handle);
+    snprintf(qdisc_data->chr_dev_name+offs, MAX_DEVNAME_LEN-offs, "-%x_%x", h_maj, h_min);
     
     // Register Device
     if((alloc_chrdev_region(&qdisc_data->chr_dev_majour_num, 0, 1, qdisc_data->chr_dev_name)) < 0) {

@@ -198,6 +198,58 @@ $ sudo python3 userspace_delay.py /dev/sch_delay/eth0-1_0
 $ sudo python3 userspace_delay.py /dev/sch_delay/eth1-1_0
 ```
 
+# Advanced Usage: Per-Traffic-Class Delay QDiscs
+
+QDiscs are a sophisticated concept in Linux, which we will exploit next to define different delays per traffic class. We will use a hierarchy of QDiscs to assign different delays to packets of different traffic classes sent through the same network interface.
+
+The QDisc hierarchy looks as follows:
+
+```
+            ETS
+	   (1:0)
+	  /     \
+	 /       \
+       ETS       ETS
+       1:1       1:2
+        |         |
+	|         |
+      Delay     Delay
+     (10:0)     (20:0)
+```
+
+At the top of the hierarchy, we place an ETS (Enhanced Tranmission Selection) QDisc. ETS is a so-called classful QDisc with sub-classes to which other QDiscs can be assigned. The traffic of these sub-classes is scheduled by ETS either using deficit round-robbin (weighted fair bandwidth sharing) or priority queuing. We use fair bandwidth sharing since we do not want to penalize any of the traffic classes (other than applying some delay to them). The ETS QDisc with two sub-classes is set up as follows on a network interface, say `eth0`:
+
+```
+$ sudo tc qdisc add dev ens1f3 root handle 1: ets bands 2 quanta 1000 1000
+```
+
+Each band receives the same "quanta" for fair sharing (same bandwidth for all sub-classes), and is implicitly associated with a sub-class. The first sub-class gets the handle 1:1 and the second 1:2 (parent:bandnumber).
+
+Next, we add two delay QDiscs to sub-class 1:1 and 1:2:
+
+```
+$ sudo tc qdisc add dev eth0 parent 1:1 handle 10: delay reorder True limit 1000
+$ sudo tc qdisc add dev eth0 parent 1:2 handle 20: delay reorder True limit 1000
+```
+
+The first delay QDisc gets the handle 10: and the second the second the handle 20:.
+
+Finally, we set up filters to classify egress traffic from eth0 as follows:
+
+```
+$ sudo tc filter add dev eth0 protocol ip parent 1: prio 1 u32 match ip dst 192.168.1.1/24 flowid 1:1
+$ sudo tc filter add dev eth0 protocol ip parent 1: prio 2 matchall flowid 1:2
+
+```
+
+The first filter has the highest priority (prio 1). The second filter has a lower priority (prio 2) and, therefore, is only effective if the first filter does not match.
+
+The first filter uses the versatile u32 filter, which matches on bits of the packet header. `ip dst ...` is just a shorthand for matching on the bits of the IP destination address of IPv4 packets. Such packets are assigned to traffic class 1:1 and, therefore, will be delayed by the delay QDisc 10:.
+
+The second filter catches all other packets (matchall) and assigns them to the second traffic class, which is delayed by the second delay QDisc 20:0.
+
+For other classful QDiscs and filters, please check the man page of tc.
+
 # Evaluation
 
 To give an impression on the accuracy to be expected with the NetworkDelayEmulator, we performed measurements with the following virtual bridge setup. We used network taps in fiber optic cables (marked with `x`) and an FPGA network measurement card from Napatech (NT40E3-4-PTP) to capture the traffic from H1 (sender) to H2 (receiver) with nano-second precision.

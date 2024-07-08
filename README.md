@@ -170,7 +170,7 @@ The file format of histogram data is a list of comma-separated values (CSV) with
 
 The first line defines bin 1, the second line bin 2, etc.
 
-A bin reacher from its lower bound to the lower bound of the next bin. Count is the number of values in the bin (frequency). Unit can be `ns` for nanop-seconds, `us` for micro-seconds, `ms` for milli-seconds, or `s` for seconds. The last line must have a count of 0. It only servers to define the upper bound of the previous bin.
+A bin reacher from its lower bound to the lower bound of the next bin. Count is the number of values in the bin (frequency). Unit can be `ns` for nano-seconds, `us` for micro-seconds, `ms` for milli-seconds, or `s` for seconds. The last line must have a count of 0. It only servers to define the upper bound of the previous bin.
 
 ## Importing Delay Distributions from DETERMINISTIC6G Project
 

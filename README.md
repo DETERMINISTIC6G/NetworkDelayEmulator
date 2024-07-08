@@ -58,7 +58,7 @@ Clone the repository (we assume that you cloned to your home directory and refer
 $ git clone https://deterministic6g.informatik.uni-stuttgart.de/d6g/networkdelayemulator.git
 ```
 
-## Building and loading the kernel module
+## Building and Loading the Kernel Module
 
 To build the kernel module:
 
@@ -80,7 +80,7 @@ $ lsmod | grep sch_delay
 sch_delay              16384  0
 ```
 
-## Building modified tc tool
+## Building Modified tc Tool
 
 QDiscs are commonly loaded with the tc tool in Linux. The standard tc tool coming with the Linux distribution will not know about the new kernel module and QDisc. Therefore, we need to build our own patched version of tc that is aware of the delay QDisc as follows.
 
@@ -160,7 +160,7 @@ options:
 
 The user-space application `userspace_delay` (see above) can load histograms of delay distributions.
 
-The file format of histogram data is a list of comma-separated values (CSV) with the following columns:
+The file format of histogram data is a list of comma-separated values (CSV) with one line for each bin and three columns:
 
 ```
 <lower bound of bin>,<count>,<unit>
@@ -170,7 +170,7 @@ The file format of histogram data is a list of comma-separated values (CSV) with
 
 The first line defines bin 1, the second line bin 2, etc.
 
-The last line must have a count of 0. It only servers to define the upper bound of the previous bin.
+A bin reacher from its lower bound to the lower bound of the next bin. Count is the number of values in the bin (frequency). Unit can be `ns` for nanop-seconds, `us` for micro-seconds, `ms` for milli-seconds, or `s` for seconds. The last line must have a count of 0. It only servers to define the upper bound of the previous bin.
 
 ## Importing Delay Distributions from DETERMINISTIC6G Project
 

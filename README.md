@@ -162,7 +162,7 @@ The user-space application `userspace_delay` (see above) can load histograms of 
 
 The file format of histogram data is a list of comma-separated values (CSV) with one line for each bin and three columns:
 
-```
+```CSV
 <lower bound of bin>,<count>,<unit>
 ...
 <lower bound of bin>,0,<unit>
@@ -171,6 +171,20 @@ The file format of histogram data is a list of comma-separated values (CSV) with
 The first line defines bin 1, the second line bin 2, etc.
 
 A bin reacher from its lower bound to the lower bound of the next bin. Count is the number of values in the bin (frequency). Unit can be `ns` for nano-seconds, `us` for micro-seconds, `ms` for milli-seconds, or `s` for seconds. The last line must have a count of 0. It only servers to define the upper bound of the previous bin.
+
+All units should be `ns` for the user-space application.
+
+Alternatively, the data can also be loaded in JSON format. The structure of the file is as follows:
+
+```JSON
+{
+  "count":<relative count>,
+  "lower_bound":<number of units>,
+  "upper_bound":<number of units>,
+  "unit":"ns"
+},
+...
+```
 
 ## Importing Delay Distributions from DETERMINISTIC6G Project
 
@@ -184,21 +198,16 @@ To use this data, first clone the repo:
 $ git clone https://github.com/DETERMINISTIC6G/deterministic6g_data.git
 ```
 
-For the three provided 5G measurements (PD-Wireless-5G-1, PD-Wireless-5G-2a, PD-Wireless-5G-2b), a script `main.py` is provided in the directory of each data set to convert the raw data to XML format. For instance, you can convert the data set `PD-Wireless-5G-2a` as follows:
+For the three provided 5G measurements (PD-Wireless-5G-1, PD-Wireless-5G-2a, PD-Wireless-5G-3a), a script `scripts/main.py` is provided to convert the raw data to CSV or JSON format (see above). For instance, you can convert the data set as follows:
 
 ```
-$ cd PD-Wireless-5G-2a
+$ cd scripts
 $ export PYTHONPATH=..
-$ main.py
+$ main.py -src <raw/from_path.csv> -dst <to_path.csv> --emulator
 ```
 
-This produces the files `uplink.xml` and `downlink.xml` with histograms of the uplink and downlink directions, respectively.
+This produces the files `to_path.csv` (or `to_path.json`) with histograms of the uplink or downlink directions, respectively.
 
-Finally, you convert the XML data to the CSV file format above with the script `...` as follows:
-
-```
-$ ...
-```
 
 # Advanced Usage: Emulating End-to-End Network Delay for Multiple End-to-End Paths
 

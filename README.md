@@ -20,7 +20,7 @@ The core of the emulator is a QDisc called sch_delay that can be assigned to net
 
 The following figure shows the system architecture consisting of two major parts: the QDisc running in the kernel space, and a user-space application providing individual delays for each transmitted packet through a character device. The provided delays are buffered in the QDisc, such that delay values are available immediatelly when new packets arrive. Whenever a packet is to be transmitted through the network interface, the next delay value is dequeued and applied to the packet before passing it on to the network interface (TX queue).
 
-Providing delays through a user-space application allows for a flexible and convenient definition of delays without touching any kernel code. The project contains a sample user-space application implemented in Python to define delays as constant values or as normal distributions (probability density function), which can be easily extended to calculate other delay distribution.
+Providing delays through a user-space application allows for a flexible and convenient definition of delays without touching any kernel code. The project contains a sample user-space application implemented in Python to define delays as constant values, normal distributions (probability density function), or histograms. This application can be easily extended to calculate other delay distributions.
 
 ![Design](design.png)
 
@@ -130,7 +130,7 @@ The parameters of the QDisc are:
 | limit  | int  | 1000    | The size of the internal queue for buffering delayed packets. If this queue overflows, packets will get dropped. For instance, if packets are delayed by a constant value of 10 ms and arrive at a rate of 1000 pkt/s, then a queue of at least 1000 pkt/s * 10e-3 s = 10 pkts would be required. A warning will be posted to the kernel log if messages are dropped. |
 | reorder| bool | true    | Whether packet reording is allowed to closely follow the given delay values, or keep packet order as received. If packet reordering is allowed, a packet with a smaller random delay might overtake an earlier packet with a larger random delay in the QDisc. If packet re-ordering is not allowed, additional delay might be added to the given delay values to avoid packet re-ordering. |
 
-When you have assigned the QDisc, a new character device will appear in the directory `/dev/sch_delay`. Through this decvice, the QDisc receives the delays for the packets from a user-space application. A sample user-space application implemenented in Python is included in directory `userspace_delay`. This application supports constant delays and normally distributed delays. You can also take this application as an example to implement your own application providing delays to the QDisc. 
+When you have assigned the QDisc, a new character device will appear in the directory `/dev/sch_delay`. Through this decvice, the QDisc receives the delays for the packets from a user-space application. A sample user-space application implemenented in Python is included in directory `userspace_delay`. This application supports constant delays, normally distributed delays, and histograms. You can also take this application as an example to implement your own application providing delays to the QDisc. 
 
 Start the given user-space application as follows:
 
@@ -154,7 +154,53 @@ options:
                         Minimum count of free elements in QDISC. New delays are only calculated and transmitted to the QDisc if the delay buffer has at least this number of free places. 
 ```
 
-# Advanced usage: emulating end-to-end network delay for multiple end-to-end paths
+# Loading Delay Histograms
+
+## File Format
+
+The user-space application `userspace_delay` (see above) can load histograms of delay distributions.
+
+The file format of histogram data is a list of comma-separated values (CSV) with the following columns:
+
+```
+<lower bound of bin>,<count>,<unit>
+...
+<lower bound of bin>,0,<unit>
+```
+
+The first line defines bin 1, the second line bin 2, etc.
+
+The last line must have a count of 0. It only servers to define the upper bound of the previous bin.
+
+## Importing Delay Distributions from DETERMINISTIC6G Project
+
+The DETERMINISTIC6G project provides several histograms from delay measurements in 5G networks in GitHub:
+
+[Delay Measurements from DETERMINISTIC6G Project](git@github.com:DETERMINISTIC6G/deterministic6g_data.git)
+
+To use this data, first clone the repo:
+
+```(console)
+$ git clone https://github.com/DETERMINISTIC6G/deterministic6g_data.git
+```
+
+For the three provided 5G measurements (PD-Wireless-5G-1, PD-Wireless-5G-2a, PD-Wireless-5G-2b), a script `main.py` is provided in the directory of each data set to convert the raw data to XML format. For instance, you can convert the data set `PD-Wireless-5G-2a` as follows:
+
+```
+$ cd PD-Wireless-5G-2a
+$ export PYTHONPATH=..
+$ main.py
+```
+
+This produces the files `uplink.xml` and `downlink.xml` with histograms of the uplink and downlink directions, respectively.
+
+Finally, you convert the XML data to the CSV file format above with the script `...` as follows:
+
+```
+$ ...
+```
+
+# Advanced Usage: Emulating End-to-End Network Delay for Multiple End-to-End Paths
 
 Assume you want to emulate the individual end-to-end network delay in different directions (upstream and downstream to/from hosts) and/or between different pairs of hosts. To this end, you can use a virtual bridge on a central emulation node and assign individual delays to each outgoing (downstream) port.
 

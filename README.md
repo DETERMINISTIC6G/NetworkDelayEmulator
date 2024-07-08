@@ -113,7 +113,7 @@ If you have completed the steps above, you can assign a QDisc to a network inter
 
 ```console
 $ cd ~/networkdelayemulator/tc
-$ sudo ./iproute2/tc/tc qdisc add dev eth0 root delay reorder True limit 1000
+$ sudo ./iproute2/tc/tc qdisc add dev eth0 root handle 1:0 delay reorder True limit 1000
 ```
 
 You can later remove the QDisc as follows:
@@ -130,13 +130,13 @@ The parameters of the QDisc are:
 | limit  | int  | 1000    | The size of the internal queue for buffering delayed packets. If this queue overflows, packets will get dropped. For instance, if packets are delayed by a constant value of 10 ms and arrive at a rate of 1000 pkt/s, then a queue of at least 1000 pkt/s * 10e-3 s = 10 pkts would be required. A warning will be posted to the kernel log if messages are dropped. |
 | reorder| bool | true    | Whether packet reording is allowed to closely follow the given delay values, or keep packet order as received. If packet reordering is allowed, a packet with a smaller random delay might overtake an earlier packet with a larger random delay in the QDisc. If packet re-ordering is not allowed, additional delay might be added to the given delay values to avoid packet re-ordering. |
 
-When you have assigned the QDisc, a new character device will appear in the directory `/dev/sch_delay`. Through this decvice, the QDisc receives the delays for the packets from a user-space application. A sample user-space application implemenented in Python is included in directory `userspace_delay`. This application supports constant delays and normally distributed delays. You can also take this application as an example to implement your own application providing delays to the QDisc. 
+When you have assigned the QDisc, a new character device will appear in the directory `/dev/sch_delay`. The file name of the character device is the name of the network device to which the QDisc is attached followed by the major and minor numbers of the QDisc handle: NETDEVICE-HANDLEMAJOR_HANDLEMINOR (e.g. `eth0-1_0` for a QDisc attached to the network device eth0 and with the handle 1:0). Through this decvice, the QDisc receives the delays for the packets from a user-space application. A sample user-space application implemenented in Python is included in directory `userspace_delay`. This application supports constant delays and normally distributed delays. You can also take this application as an example to implement your own application providing delays to the QDisc. 
 
 Start the given user-space application as follows:
 
 ```console
 $ cd ~/networkdelayemulator/userspace_delay
-$ sudo python3 userspace_delay.py /dev/sch_delay/eth0
+$ sudo python3 userspace_delay.py /dev/sch_delay/eth0-1_0
 ```
 Optional parameters to the user-space application are:
 
@@ -186,16 +186,16 @@ Next, we add the delay QDiscs to eth0 and eth1 on Hemu (be sure to load the kern
 
 ```console
 $ cd ~/networkdelayemulator/tc
-$ sudo ./iproute2/tc/tc  qdisc add dev eth0 root delay reorder True limit 1000
-$ sudo ./iproute2/tc/tc  qdisc add dev eth1 root delay reorder True limit 1000
+$ sudo ./iproute2/tc/tc  qdisc add dev eth0 root handle 1:0 delay reorder True limit 1000
+$ sudo ./iproute2/tc/tc  qdisc add dev eth1 root handle 1:0 delay reorder True limit 1000
 ```
 
-Finally, we start two instances of the user-space application, one providing delays for messages leaving through port eth0 (character device `/dev/sch_delay/eth0`) to emulate the delay from H2 towards H1, and one for port eth1 (character device `/dev/sch_delay/eth1`) to emulate the delay from H1 to H2.
+Finally, we start two instances of the user-space application, one providing delays for messages leaving through port eth0 (character device `/dev/sch_delay/eth0-1_0`) to emulate the delay from H2 towards H1, and one for port eth1 (character device `/dev/sch_delay/eth1-1_0`) to emulate the delay from H1 to H2.
 
 ```console
 $ cd ~/networkdelayemulator/userspace_delay
-$ sudo python3 userspace_delay.py /dev/sch_delay/eth0
-$ sudo python3 userspace_delay.py /dev/sch_delay/eth1
+$ sudo python3 userspace_delay.py /dev/sch_delay/eth0-1_0
+$ sudo python3 userspace_delay.py /dev/sch_delay/eth1-1_0
 ```
 
 # Evaluation

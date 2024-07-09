@@ -28,6 +28,8 @@
 #define TRUE 1
 #define FALSE 0
 
+#define MAX_DEVNAME_LEN 50
+
 signed long long get_next_delay(struct kfifo *delay_queue);
 
 /*
@@ -45,7 +47,7 @@ struct delay_qdisc_data {
 
     // Chardev
     int chr_dev_majour_num;
-    char chr_dev_name[50];
+    char chr_dev_name[MAX_DEVNAME_LEN];
     struct class *dev_class;
     int chr_dev_open_count;
 

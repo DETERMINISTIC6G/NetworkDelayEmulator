@@ -38,17 +38,25 @@ def round_decimal(x):
 
 def convert(path_from, path_to, hist_for_emulator=False):
     """
-    Convert the measurement data in the CSV format: [bounds count]
+    Convert the measurement data in the XML format:
+    <histogram>
+        <bin low="1 ms">1</bin>
+        <bin low="2 ms">4</bin>
+        <bin low="3 ms">3</bin>
+        <bin low="4 ms">0</bin>
+    </histogram>
     to a histogram for the emulator in the CSV format [bounds, count, unit]
     or JSON format [count, lower_bound, upper_bound, unit]
     For the emulator, the units must be nanoseconds
     """
     _, extension_from = os.path.splitext(path_from)
-    if extension_from.lower() != '.csv':
-        raise TypeError('No csv format')
-        
-    pkt_delays = pd.read_csv(path_from, sep='\t', names=['bounds', 'count'], converters={'bounds': to_decimal, 'count' : to_decimal}, engine='python')
-    pkt_delays['unit'] = pkt_delays['bounds'].apply(lambda x: set_unit(str(x)))
+    pkt_delays = pd.read_xml(path_from, names=['bounds', 'count'],
+                         encoding='utf-8', parse_dates=[1])
+    pkt_delays[['bounds', 'unit']] = pkt_delays['bounds'].str.split('\s+', expand=True)
+    pkt_delays = pkt_delays.iloc[1:] # delete -inf
+    pkt_delays = pkt_delays.convert_dtypes()
+    pkt_delays['bounds'] = pkt_delays['bounds'].apply(lambda x: to_decimal(x))
+    pkt_delays['count'] = pkt_delays['count'].apply(lambda x: to_decimal(x))
             
     if hist_for_emulator : #only [ns]
         pkt_delays.loc[pkt_delays['unit'] == 's', 'bounds'] *= 1_000_000_000

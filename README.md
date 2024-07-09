@@ -158,9 +158,9 @@ options:
 
 ## File Format
 
-The user-space application `userspace_delay` (see above) can load histograms of delay distributions.
+The user-space application `userspace_delay` (see above) can load histograms of delay distributions. The file format is either CSV (comma-separated values) or JSON. 
 
-The file format of histogram data is a list of comma-separated values (CSV) with one line for each bin and three columns:
+CSV files define the bins of the histogram as follows: 
 
 ```CSV
 <lower bound of bin>,<count>,<unit>
@@ -168,13 +168,9 @@ The file format of histogram data is a list of comma-separated values (CSV) with
 <lower bound of bin>,0,<unit>
 ```
 
-The first line defines bin 1, the second line bin 2, etc.
+The first line defines bin 1, the second line bin 2, etc. A bin reaches from its lower bound to the lower bound of the next bin. Count is the number of values in the bin (frequency). Unit should be `ns` (nano-seconds). 
 
-A bin reacher from its lower bound to the lower bound of the next bin. Count is the number of values in the bin (frequency). Unit can be `ns` for nano-seconds, `us` for micro-seconds, `ms` for milli-seconds, or `s` for seconds. The last line must have a count of 0. It only servers to define the upper bound of the previous bin.
-
-All units should be `ns` for the user-space application.
-
-Alternatively, the data can also be loaded in JSON format. The structure of the file is as follows:
+The structure of the JSON file is as follows:
 
 ```JSON
 {
@@ -194,20 +190,25 @@ The DETERMINISTIC6G project provides several histograms from delay measurements 
 
 To use this data, first clone the repo:
 
-```(console)
+```console
 $ git clone https://github.com/DETERMINISTIC6G/deterministic6g_data.git
 ```
 
-For the three provided 5G measurements (PD-Wireless-5G-1, PD-Wireless-5G-2a, PD-Wireless-5G-3a), a script `scripts/main.py` is provided to convert the raw data to CSV or JSON format (see above). For instance, you can convert the data set as follows:
+For the three provided 5G data sets  (PD-Wireless-5G-1, PD-Wireless-5G-2a, PD-Wireless-5G-3a), a script `main.py` is provided with each data set to convert the raw data to CSV or JSON format (see above). For instance, you can convert the data set PD-Wireless-5G-2a as follows:
 
-```
-$ cd scripts
+```console
+$ cd deterministic6g_data/PD-Wireless-5G-2a
 $ export PYTHONPATH=..
-$ main.py -src <raw/from_path.csv> -dst <to_path.csv> --emulator
+$ main.py
 ```
 
-This produces the files `to_path.csv` (or `to_path.json`) with histograms of the uplink or downlink directions, respectively.
+This produces the files `...` and `...` with histograms of the uplink or downlink directions, respectively.
 
+These files can be converted to the emulator format as follows:
+
+```console
+...
+```
 
 # Advanced Usage: Emulating End-to-End Network Delay for Multiple End-to-End Paths
 

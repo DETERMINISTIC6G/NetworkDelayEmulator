@@ -107,13 +107,13 @@ $ make
 
 If everything worked well, you should see the tc executable in the directory `iproute/tc`. We refer to this patched version of tc as `~/networkdelayemulator/tc/iproute2/tc/tc` in the following.
 
-# Usage: assigning a delay QDisc to a network interface and running the user-space application
+# Usage: Assigning a Delay QDisc to a Network Interface and Running the User-Space Application
 
 If you have completed the steps above, you can assign a QDisc to a network interface, say eth0, as follows, using the modified tc tool:
 
 ```console
 $ cd ~/networkdelayemulator/tc
-$ sudo ./iproute2/tc/tc qdisc add dev eth0 root delay reorder True limit 1000
+$ sudo ./iproute2/tc/tc qdisc add dev eth0 root handle 1:0 delay reorder True limit 1000
 ```
 
 You can later remove the QDisc as follows:
@@ -130,13 +130,13 @@ The parameters of the QDisc are:
 | limit  | int  | 1000    | The size of the internal queue for buffering delayed packets. If this queue overflows, packets will get dropped. For instance, if packets are delayed by a constant value of 10 ms and arrive at a rate of 1000 pkt/s, then a queue of at least 1000 pkt/s * 10e-3 s = 10 pkts would be required. A warning will be posted to the kernel log if messages are dropped. |
 | reorder| bool | true    | Whether packet reording is allowed to closely follow the given delay values, or keep packet order as received. If packet reordering is allowed, a packet with a smaller random delay might overtake an earlier packet with a larger random delay in the QDisc. If packet re-ordering is not allowed, additional delay might be added to the given delay values to avoid packet re-ordering. |
 
-When you have assigned the QDisc, a new character device will appear in the directory `/dev/sch_delay`. Through this decvice, the QDisc receives the delays for the packets from a user-space application. A sample user-space application implemenented in Python is included in directory `userspace_delay`. This application supports constant delays, normally distributed delays, and histograms. You can also take this application as an example to implement your own application providing delays to the QDisc. 
+When you have assigned the QDisc, a new character device will appear in the directory `/dev/sch_delay`. The file name of the character device is the name of the network device to which the QDisc is attached followed by the major and minor numbers of the QDisc handle: NETDEVICE-HANDLEMAJOR_HANDLEMINOR (e.g. `eth0-1_0` for a QDisc attached to the network device eth0 and with the handle 1:0). Through this decvice, the QDisc receives the delays for the packets from a user-space application. A sample user-space application implemenented in Python is included in directory `userspace_delay`. This application supports constant delays and normally distributed delays. You can also take this application as an example to implement your own application providing delays to the QDisc. 
 
 Start the given user-space application as follows:
 
 ```console
 $ cd ~/networkdelayemulator/userspace_delay
-$ sudo python3 userspace_delay.py /dev/sch_delay/eth0
+$ sudo python3 userspace_delay.py /dev/sch_delay/eth0-1_0
 ```
 Optional parameters to the user-space application are:
 
@@ -241,17 +241,69 @@ Next, we add the delay QDiscs to eth0 and eth1 on Hemu (be sure to load the kern
 
 ```console
 $ cd ~/networkdelayemulator/tc
-$ sudo ./iproute2/tc/tc  qdisc add dev eth0 root delay reorder True limit 1000
-$ sudo ./iproute2/tc/tc  qdisc add dev eth1 root delay reorder True limit 1000
+$ sudo ./iproute2/tc/tc  qdisc add dev eth0 root handle 1:0 delay reorder True limit 1000
+$ sudo ./iproute2/tc/tc  qdisc add dev eth1 root handle 1:0 delay reorder True limit 1000
 ```
 
-Finally, we start two instances of the user-space application, one providing delays for messages leaving through port eth0 (character device `/dev/sch_delay/eth0`) to emulate the delay from H2 towards H1, and one for port eth1 (character device `/dev/sch_delay/eth1`) to emulate the delay from H1 to H2.
+Finally, we start two instances of the user-space application, one providing delays for messages leaving through port eth0 (character device `/dev/sch_delay/eth0-1_0`) to emulate the delay from H2 towards H1, and one for port eth1 (character device `/dev/sch_delay/eth1-1_0`) to emulate the delay from H1 to H2.
 
 ```console
 $ cd ~/networkdelayemulator/userspace_delay
-$ sudo python3 userspace_delay.py /dev/sch_delay/eth0
-$ sudo python3 userspace_delay.py /dev/sch_delay/eth1
+$ sudo python3 userspace_delay.py /dev/sch_delay/eth0-1_0
+$ sudo python3 userspace_delay.py /dev/sch_delay/eth1-1_0
 ```
+
+# Advanced Usage: Per-Traffic-Class Delay QDiscs
+
+QDiscs are a sophisticated concept in Linux, which we will exploit next to define different delays per traffic class. We will use a hierarchy of QDiscs to assign different delays to packets of different traffic classes sent through the same network interface.
+
+The QDisc hierarchy looks as follows:
+
+```
+            ETS
+	   (1:0)
+	  /     \
+	 /       \
+       ETS       ETS
+       1:1       1:2
+        |         |
+	|         |
+      Delay     Delay
+     (10:0)     (20:0)
+```
+
+At the top of the hierarchy, we place an ETS (Enhanced Tranmission Selection) QDisc. ETS is a so-called classful QDisc with sub-classes to which other QDiscs can be assigned. The traffic of these sub-classes is scheduled by ETS either using deficit round-robbin (weighted fair bandwidth sharing) or priority queuing. We use fair bandwidth sharing since we do not want to penalize any of the traffic classes (other than applying some delay to them). The ETS QDisc with two sub-classes is set up as follows on a network interface, say `eth0`:
+
+```
+$ sudo tc qdisc add dev ens1f3 root handle 1: ets bands 2 quanta 1000 1000
+```
+
+Each band receives the same "quanta" for fair sharing (same bandwidth for all sub-classes), and is implicitly associated with a sub-class. The first sub-class gets the handle 1:1 and the second 1:2 (parent:bandnumber).
+
+Next, we add two delay QDiscs to sub-class 1:1 and 1:2:
+
+```
+$ sudo tc qdisc add dev eth0 parent 1:1 handle 10: delay reorder True limit 1000
+$ sudo tc qdisc add dev eth0 parent 1:2 handle 20: delay reorder True limit 1000
+```
+
+The first delay QDisc gets the handle 10: and the second the second the handle 20:.
+
+Finally, we set up filters to classify egress traffic from eth0 as follows:
+
+```
+$ sudo tc filter add dev eth0 protocol ip parent 1: prio 1 u32 match ip dst 192.168.1.1/24 flowid 1:1
+$ sudo tc filter add dev eth0 protocol ip parent 1: prio 2 matchall flowid 1:2
+
+```
+
+The first filter has the highest priority (prio 1). The second filter has a lower priority (prio 2) and, therefore, is only effective if the first filter does not match.
+
+The first filter uses the versatile u32 filter, which matches on bits of the packet header. `ip dst ...` is just a shorthand for matching on the bits of the IP destination address of IPv4 packets. Such packets are assigned to traffic class 1:1 and, therefore, will be delayed by the delay QDisc 10:.
+
+The second filter catches all other packets (matchall) and assigns them to the second traffic class, which is delayed by the second delay QDisc 20:0.
+
+For other classful QDiscs and filters, please check the man page of tc.
 
 # Evaluation
 

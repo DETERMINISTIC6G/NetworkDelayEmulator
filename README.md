@@ -194,7 +194,7 @@ To use this data, first clone the repo:
 $ git clone https://github.com/DETERMINISTIC6G/deterministic6g_data.git
 ```
 
-For the three provided 5G data sets  (PD-Wireless-5G-1, PD-Wireless-5G-2a, PD-Wireless-5G-3a), a script `main.py` is provided with each data set to convert the raw data to CSV or JSON format (see above). For instance, you can convert the data set PD-Wireless-5G-2a as follows:
+For the three provided 5G data sets (PD-Wireless-5G-1, PD-Wireless-5G-2a, PD-Wireless-5G-3a), a script `main.py` is provided with each data set to convert the raw data to CSV or JSON format (see above). For instance, you can convert the data set PD-Wireless-5G-2a as follows:
 
 ```console
 $ cd deterministic6g_data/PD-Wireless-5G-2a

@@ -194,7 +194,7 @@ To use this data, first clone the repo:
 $ git clone https://github.com/DETERMINISTIC6G/deterministic6g_data.git
 ```
 
-For the three provided 5G data sets (PD-Wireless-5G-1, PD-Wireless-5G-2a, PD-Wireless-5G-3a), a script `main.py` is provided with each data set to convert the raw data to CSV or JSON format (see above). For instance, you can convert the data set PD-Wireless-5G-2a as follows:
+For the three provided 5G data sets (PD-Wireless-5G-1, PD-Wireless-5G-2a, PD-Wireless-5G-3a), a script `main.py` is provided in the data repository with each data set to convert the raw data to XML format. For instance, you can convert the data set PD-Wireless-5G-2a as follows:
 
 ```console
 $ cd deterministic6g_data/PD-Wireless-5G-2a
@@ -202,13 +202,16 @@ $ export PYTHONPATH=..
 $ main.py
 ```
 
-This produces the files `...` and `...` with histograms of the uplink or downlink directions, respectively.
+This produces the files `uplink.xml` and `downlink.xml` with histograms of the uplink or downlink directions, respectively.
 
-These files can be converted to the emulator format as follows:
+These files can be converted to the emulator format as shown here for the file `downlink.xml`, which we will save as `histogram.csv` to be used by the emulator:
 
 ```console
-...
+$ cd scripts
+$ main.py -src downlink.xml -dst histogram.csv --emulator
 ```
+
+Note that the script `main.py` here is the script from the scripts directory of the NetworkDelayEmulator repository. Setting the parameter `--emulator` converts all bounds to `ns`. All other values remain unchanged as specified in the original file `downlink.xml`.
 
 # Advanced Usage: Emulating End-to-End Network Delay for Multiple End-to-End Paths
 

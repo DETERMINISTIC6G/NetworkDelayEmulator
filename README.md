@@ -52,10 +52,10 @@ To compile the kernel module, the kernel header files matching the running kerne
 $ sudo apt install linux-headers-$(uname -r)
 ```
 
-Clone the repository (we assume that you cloned to your home directory and refer to this location as `~/networkdelayemulator` in the following):
+Clone the repository (we assume that you cloned to your home directory and refer to this location as `~/NetworkDelayEmulator` in the following):
 
 ```console
-$ git clone https://deterministic6g.informatik.uni-stuttgart.de/d6g/networkdelayemulator.git
+$ git clone https://github.com/DETERMINISTIC6G/NetworkDelayEmulator.git
 ```
 
 ## Building and Loading the Kernel Module
@@ -63,14 +63,14 @@ $ git clone https://deterministic6g.informatik.uni-stuttgart.de/d6g/networkdelay
 To build the kernel module:
 
 ```console
-$ cd ~/networkdelayemulator/sch_delay
+$ cd ~/NetworkDelayEmulator/sch_delay
 $ make clean & make
 ```
 
 To load the kernel module:
 
 ```console
-$ sudo insmod ~/networkdelayemulator/sch_delay/build/sch_delay.ko
+$ sudo insmod ~/NetworkDelayEmulator/sch_delay/build/sch_delay.ko
 ```
 
 Check, whether the module has been loaded:
@@ -87,7 +87,7 @@ QDiscs are commonly loaded with the tc tool in Linux. The standard tc tool comin
 Download iproute2, which contains tc. We use iproute2 version v6.5.0, but you can also try other versions (see [iproute2](https://github.com/iproute2/iproute2/tags)):
 
 ```console
-$ cd ~/networkdelayemulator/tc
+$ cd ~/NetworkDelayEmulator/tc
 $ git clone --branch v6.5.0 https://github.com/iproute2/iproute2.git
 ```
 
@@ -105,21 +105,21 @@ $ cd iproute2
 $ make
 ```
 
-If everything worked well, you should see the tc executable in the directory `iproute/tc`. We refer to this patched version of tc as `~/networkdelayemulator/tc/iproute2/tc/tc` in the following.
+If everything worked well, you should see the tc executable in the directory `iproute/tc`. We refer to this patched version of tc as `~/NetworkDelayEmulator/tc/iproute2/tc/tc` in the following.
 
 # Usage: Assigning a Delay QDisc to a Network Interface and Running the User-Space Application
 
 If you have completed the steps above, you can assign a QDisc to a network interface, say eth0, as follows, using the modified tc tool:
 
 ```console
-$ cd ~/networkdelayemulator/tc
+$ cd ~/NetworkDelayEmulator/tc
 $ sudo ./iproute2/tc/tc qdisc add dev eth0 root handle 1:0 delay reorder True limit 1000
 ```
 
 You can later remove the QDisc as follows:
 
 ```console
-$ cd ~/networkdelayemulator/tc
+$ cd ~/NetworkDelayEmulator/tc
 $ sudo ./iproute2/tc/tc qdisc del dev eth0 root
 ```
 
@@ -135,7 +135,7 @@ When you have assigned the QDisc, a new character device will appear in the dire
 Start the given user-space application as follows:
 
 ```console
-$ cd ~/networkdelayemulator/userspace_delay
+$ cd ~/NetworkDelayEmulator/userspace_delay
 $ sudo python3 userspace_delay.py /dev/sch_delay/eth0-1_0
 ```
 Optional parameters to the user-space application are:
@@ -244,7 +244,7 @@ $ sudo ip link set eth1 up
 Next, we add the delay QDiscs to eth0 and eth1 on Hemu (be sure to load the kernel module first as explained above and use the modified tc tool that you built):
 
 ```console
-$ cd ~/networkdelayemulator/tc
+$ cd ~/NetworkDelayEmulator/tc
 $ sudo ./iproute2/tc/tc  qdisc add dev eth0 root handle 1:0 delay reorder True limit 1000
 $ sudo ./iproute2/tc/tc  qdisc add dev eth1 root handle 1:0 delay reorder True limit 1000
 ```
@@ -252,7 +252,7 @@ $ sudo ./iproute2/tc/tc  qdisc add dev eth1 root handle 1:0 delay reorder True l
 Finally, we start two instances of the user-space application, one providing delays for messages leaving through port eth0 (character device `/dev/sch_delay/eth0-1_0`) to emulate the delay from H2 towards H1, and one for port eth1 (character device `/dev/sch_delay/eth1-1_0`) to emulate the delay from H1 to H2.
 
 ```console
-$ cd ~/networkdelayemulator/userspace_delay
+$ cd ~/NetworkDelayEmulator/userspace_delay
 $ sudo python3 userspace_delay.py /dev/sch_delay/eth0-1_0
 $ sudo python3 userspace_delay.py /dev/sch_delay/eth1-1_0
 ```
@@ -326,7 +326,7 @@ The specs of the Hemu host are:
 * Intel(R) Xeon(R) CPU E5-1650 v3 @ 3.50GHz
 * 16 GB RAM
 
-The pcap traces and Jupyter script of this evaluation can be found in directory `~/networkdelayemulator/miscellaneous/measurements`.
+The pcap traces and Jupyter script of this evaluation can be found in directory `~/NetworkDelayEmulator/miscellaneous/measurements`.
 
 ```
        pcap (sender)

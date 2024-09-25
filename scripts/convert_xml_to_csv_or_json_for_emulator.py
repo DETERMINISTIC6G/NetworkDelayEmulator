@@ -2,6 +2,7 @@ import os
 import numpy as np
 import pandas as pd
 from decimal import Decimal
+import warnings
 
 
 
@@ -31,9 +32,9 @@ def round_decimal(x):
     """
     round the value if it is in nanoseconds [ns]
     """
-    count = float(x)
-    if (count == 0.0 or count >= 1.0):
-        return round(count)
+    value = float(x)
+    if (value == 0.0 or value >= 1.0):
+        return round(value)
   
 
 def convert(path_from, path_to, hist_for_emulator=False):
@@ -51,20 +52,28 @@ def convert(path_from, path_to, hist_for_emulator=False):
     """
     _, extension_from = os.path.splitext(path_from)
     pkt_delays = pd.read_xml(path_from, names=['bounds', 'count'],
-                         encoding='utf-8', parse_dates=[1])
-    pkt_delays[['bounds', 'unit']] = pkt_delays['bounds'].str.split('\s+', expand=True)
+                         encoding='utf-8')
+    pkt_delays[['bounds', 'unit']] = pkt_delays['bounds'].str.split(r'(?<=\d)(?=[a-zA-Z])|\s+', expand=True)
     pkt_delays = pkt_delays.iloc[1:] # delete -inf
     pkt_delays = pkt_delays.convert_dtypes()
     pkt_delays['bounds'] = pkt_delays['bounds'].apply(lambda x: to_decimal(x))
-    pkt_delays['count'] = pkt_delays['count'].apply(lambda x: to_decimal(x))
+    pkt_delays['count'] = pkt_delays['count'].apply(lambda x: round_decimal(x))
             
     if hist_for_emulator : #only [ns]
-        pkt_delays.loc[pkt_delays['unit'] == 's', 'bounds'] *= 1_000_000_000
-        pkt_delays.loc[pkt_delays['unit'] == 'ms', 'bounds'] *= 1_000_000
-        pkt_delays.loc[pkt_delays['unit'] == 'us', 'bounds'] *= 1_000
+        conditions = [
+                    pkt_delays['unit'] == 's',
+                    pkt_delays['unit'] == 'ms',
+                    pkt_delays['unit'] == 'us',
+                    pkt_delays['unit'] == 'ns'
+                    ]
+        factors = [1_000_000_000, 1_000_000, 1_000, 1]
+        pkt_delays['bounds'] = pkt_delays['bounds'] * np.select(conditions, factors, default=1)
+        pkt_delays['unit'] = np.select(conditions, ['ns', 'ns', 'ns', 'ns'], default='unknown')
 
-        pkt_delays['bounds'] = pkt_delays['bounds'].apply(lambda x: round_decimal(x))
-        pkt_delays.loc[pkt_delays['unit'] != 'unknown', 'unit'] = 'ns'
+        pkt_delays['bounds'] = pkt_delays.apply(lambda x: round_decimal(x['bounds']) if x['unit'] == 'ns' else x['bounds'], axis=1)
+
+        if (pkt_delays['unit'] == 'unknown').any():
+            warnings.warn("Units are inconsistent for the emulator (not all [ns]).", UserWarning)
 
     _, extension_to = os.path.splitext(path_to)
     
@@ -77,11 +86,13 @@ def convert(path_from, path_to, hist_for_emulator=False):
         pkt_delays.columns = ['count', 'lower_bound', 'upper_bound', 'unit']
         pkt_delays['upper_bound'] = pkt_delays['upper_bound'].shift(-1)
         pkt_delays = pkt_delays.drop(pkt_delays.index[-1])
-        if hist_for_emulator :
-            pkt_delays['upper_bound'] = pkt_delays['upper_bound'].apply(lambda x:  round_decimal(x))
-        else :
-            pkt_delays['upper_bound'] = pkt_delays['upper_bound'].apply(lambda x: str(x))
-            pkt_delays['lower_bound'] = pkt_delays['lower_bound'].apply(lambda x: str(x))
-                   
-        pkt_delays.to_json(path_to, orient='records', double_precision=15)
+
+        condition = (pkt_delays['unit'] == 'unknown') | (pkt_delays['unit'].shift(-1) == 'unknown') | (pkt_delays['unit'][:-1] != pkt_delays['unit'].shift(-1)[:-1])
+        pkt_delays.loc[condition, 'unit'] = 'unknown'
+        if hist_for_emulator:
+            pkt_delays['upper_bound'] = pkt_delays.apply(lambda x: round_decimal(x['upper_bound']) if x['unit'] == 'ns' else x['upper_bound'], axis=1)
+           
+        pkt_delays.to_json(path_to, orient='records', double_precision=9)
+
+    print(path_to)
 

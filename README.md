@@ -276,7 +276,7 @@ The QDisc hierarchy looks as follows:
      (10:0)     (20:0)
 ```
 
-At the top of the hierarchy, we place an ETS (Enhanced Tranmission Selection) QDisc. ETS is a so-called classful QDisc with sub-classes to which other QDiscs can be assigned. The traffic of these sub-classes is scheduled by ETS either using deficit round-robbin (weighted fair bandwidth sharing) or priority queuing. We use fair bandwidth sharing since we do not want to penalize any of the traffic classes (other than applying some delay to them). The ETS QDisc with two sub-classes is set up as follows on a network interface, say `eth0`:
+At the top of the hierarchy, we place an ETS (Enhanced Transmission Selection) QDisc. ETS is a so-called classful QDisc with sub-classes to which other QDiscs can be assigned. The traffic of these sub-classes is scheduled by ETS either using deficit round-robbin (weighted fair bandwidth sharing) or priority queuing. We use fair bandwidth sharing since we do not want to penalize any of the traffic classes (other than applying some delay to them). The ETS QDisc with two sub-classes is set up as follows on a network interface, say `eth0`:
 
 ```
 $ sudo tc qdisc add dev ens1f3 root handle 1: ets bands 2 quanta 1000 1000
@@ -311,7 +311,7 @@ For other classful QDiscs and filters, please check the man page of tc.
 
 # Evaluation
 
-To give an impression on the accuracy to be expected with the NetworkDelayEmulator, we performed measurements with the following virtual bridge setup. We used network taps in fiber optic cables (marked with `x`) and an FPGA network measurement card from Napatech (NT40E3-4-PTP) to capture the traffic from H1 (sender) to H2 (receiver) with nano-second precision.
+To give an impression on the accuracy to be expected with the Network Delay Emulator, we performed measurements with the following virtual bridge setup. We used network taps in fiber optic cables (marked with `x`) and an FPGA network measurement card from Napatech (NT40E3-4-PTP) to capture the traffic from H1 (sender) to H2 (receiver) with nano-second precision.
 
 The sender app on H1 sends minimum-size (64B) UDP packets at a rate of 100 pkt/s and at a speed of 10 Gbps to the receiver app on H2. 
 
